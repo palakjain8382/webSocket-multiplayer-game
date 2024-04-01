@@ -31,13 +31,14 @@
         };
 
         messageForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-            const message = messageInput.value.trim();
-            if (message !== '') {
-                ws.send(message); // Append newline character
-                messageInput.value = '';
-            }
-        });
+    event.preventDefault();
+    const message = messageInput.value.trim();
+    if (message !== '') {
+        ws.send(JSON.stringify({ type: 'message', data: message })); // Wrap message in an object
+        messageInput.value = '';
+    }
+});
+
 
         function displayMessages(messages) {
             messagesDiv.innerHTML = ''; // Clear existing messages
