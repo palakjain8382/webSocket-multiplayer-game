@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+</head>
+<body>
+    <div id="chat">
+        <form id="messageForm">
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <button type="submit">Send</button>
+        </form>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:3000'); // Update URL if needed
+
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+        const messagesDiv = document.getElementById('messages');
+
+        ws.onmessage = function (event) {
+            const message = JSON.parse(event.data);
+            if (message.type === 'messages') {
+                displayMessages(message.data);
+            } else if (message.type === 'message') {
+                displayMessage(message.data);
+            }
+        };
+
+        messageForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                ws.send(message + '\n'); // Append newline character
+                messageInput.value = '';
+            }
+        });
+
+        function displayMessages(messages) {
+            messagesDiv.innerHTML = ''; // Clear existing messages
+            messages.forEach(displayMessage);
+        }
+
+        function displayMessage(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            messagesDiv.appendChild(p);
+        }
+    </script>
+</body>
+</html>
