@@ -4,13 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Chat</title>
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #left-pane, #right-pane {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #left-pane {
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+        }
+        #messageForm {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column; /* Change to column */
+            align-items: center; /* Center align items */
+        }
+        #messageInput {
+            width: 100%; /* Take full width */
+            max-width: 300px; /* Limit maximum width */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 10px; /* Add margin to separate from button */
+            outline: none;
+        }
+        #submitButton {
+            width: 100%; /* Take full width */
+            max-width: 300px; /* Limit maximum width */
+            padding: 10px 0; /* Adjust padding */
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            outline: none;
+            transition: background-color 0.3s; /* Add transition effect */
+        }
+        #submitButton:hover {
+            background-color: #0056b3;
+        }
+        #right-pane {
+            background-color: #e9ecef; /* Light grey background */
+            padding: 20px;
+            overflow: auto;
+        }
+        #right-pane h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+        #messages {
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        .message-number {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .message-content {
+            display: inline;
+        }
+        @media only screen and (max-width: 600px) {
+            #left-pane {
+                margin-top: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="chat">
+    <div id="left-pane">
         <form id="messageForm">
             <input type="text" id="messageInput" placeholder="Type your message...">
-            <button type="submit">Send</button>
+            <button type="submit" id="submitButton">Send</button>
         </form>
+    </div>
+    <div id="right-pane">
+        <h2>Chat Messages</h2>
         <div id="messages"></div>
     </div>
 
@@ -31,25 +115,34 @@
         };
 
         messageForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-    const message = messageInput.value.trim();
-    if (message !== '') {
-        ws.send(JSON.stringify({ type: 'message', data: message })); // Wrap message in an object
-        messageInput.value = '';
-    }
-});
-
+            event.preventDefault();
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                ws.send(JSON.stringify({ type: 'message', data: message })); // Wrap message in an object
+                messageInput.value = '';
+            }
+        });
 
         function displayMessages(messages) {
             messagesDiv.innerHTML = ''; // Clear existing messages
-            messages.forEach(displayMessage);
+            messages.forEach((message, index) => {
+                displayMessage(message, index + 1);
+            });
         }
 
         function displayMessage(message) {
-            const p = document.createElement('p');
-            p.textContent = message;
-            messagesDiv.appendChild(p);
-        }
+    const messageContainer = document.createElement('div');
+    messageContainer.classList.add('message');
+
+    const messageContent = document.createElement('span');
+    messageContent.classList.add('message-content');
+    messageContent.textContent = message;
+
+    messageContainer.appendChild(messageContent);
+
+    messagesDiv.appendChild(messageContainer);
+}
+
     </script>
 </body>
 </html>

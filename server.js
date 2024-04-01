@@ -4,7 +4,7 @@ const { MongoClient } = require('mongodb');
 
 const server = http.createServer();
 const wss = new WebSocket.Server({ server });
-
+  
 let clients = [];
 let messages = [];
 
@@ -19,7 +19,7 @@ client.connect()
     })
     .catch(err => {
         console.error('Error connecting to MongoDB:', err);
-    });
+    }); 
 
 wss.on('connection', (ws) => {
     console.log('A user connected');
