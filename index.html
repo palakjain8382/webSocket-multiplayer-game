@@ -4,106 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Chat</title>
-    <style>
-        body {
-            display: flex;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        #left-pane, #right-pane {
-            flex: 1;
-            overflow: auto;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        #left-pane {
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* Center content vertically */
-            align-items: center; /* Center content horizontally */
-        }
-        #messageForm {
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column; /* Change to column */
-            align-items: center; /* Center align items */
-        }
-        #messageInput {
-            width: 100%; /* Take full width */
-            max-width: 300px; /* Limit maximum width */
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-bottom: 10px; /* Add margin to separate from button */
-            outline: none;
-        }
-        #submitButton {
-            width: 100%; /* Take full width */
-            max-width: 300px; /* Limit maximum width */
-            padding: 10px 0; /* Adjust padding */
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            outline: none;
-            transition: background-color 0.3s; /* Add transition effect */
-        }
-        #submitButton:hover {
-            background-color: #0056b3;
-        }
-        #right-pane {
-            background-color: #e9ecef; /* Light grey background */
-            padding: 20px;
-            overflow: auto;
-        }
-        #right-pane h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #333;
-        }
-        #messages {
-            overflow-y: auto;
-        }
-        .message {
-            margin-bottom: 10px;
-        }
-        .message-number {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        .message-content {
-            display: inline;
-        }
-        @media only screen and (max-width: 600px) {
-            #left-pane {
-                margin-top: 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-right">
+            <button class="settings-btn">
+                <img src="settings-icon.png" alt="Settings" width="30px">
+            </button>
+            <img id="nav-icon" src="user.png" alt="User" width="30px">
+            <p id="admin"  onclick="showAdminPopup()">Admin</p>
+        </div>
+    </nav>
+
     <div id="left-pane">
-        <form id="messageForm">
+        <div class="options">
+            <h2>Choose an option:</h2>
+            <button class="option-btn" onclick="playWithComputer()">Play with Computer</button>
+            <button class="option-btn" onclick="playWithFriends()">Play with Friends</button>
+        </div>
+        <form id="messageForm" style="display: none;"> <!-- Initially hidden -->
             <input type="text" id="messageInput" placeholder="Type your message...">
             <button type="submit" id="submitButton">Send</button>
         </form>
     </div>
-    <div id="right-pane">
+    <div id="right-pane" style="display: none;"> <!-- Initially hidden -->
         <h2>Chat Messages</h2>
         <div id="messages"></div>
     </div>
 
+    <div id="adminPopup" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span class="close" onclick="closeAdminPopup()">&times;</span> <!-- Close icon -->
+            <h2>Admin Login</h2>
+            <input type="password" id="adminKey" placeholder="Enter admin key...">
+            <button onclick="checkAdminKey()">Submit</button>
+        </div>
+    </div>
+    
+
     <script>
+        function closeAdminPopup() {
+            var adminPopup = document.getElementById('adminPopup');
+            adminPopup.style.display = 'none';
+        }
+
+        function checkAdminKey() {
+            var keyInput = document.getElementById('adminKey').value;
+            if (keyInput === 'admin') {
+                window.location.href = 'admin.html'; // Redirect to admin.html
+            } else {
+                alert('Invalid admin key. Please try again.');
+            }
+        }
+
         const ws = new WebSocket('ws://localhost:3000'); // Update URL if needed
 
         const messageForm = document.getElementById('messageForm');
         const messageInput = document.getElementById('messageInput');
         const messagesDiv = document.getElementById('messages');
+        const rightPane = document.getElementById('right-pane');
+        const optionsDiv = document.querySelector('.options'); // Get options div
 
         ws.onmessage = function (event) {
             const message = JSON.parse(event.data);
@@ -131,17 +92,50 @@
         }
 
         function displayMessage(message) {
-    const messageContainer = document.createElement('div');
-    messageContainer.classList.add('message');
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('message');
 
-    const messageContent = document.createElement('span');
-    messageContent.classList.add('message-content');
-    messageContent.textContent = message;
+            const messageContent = document.createElement('span');
+            messageContent.classList.add('message-content');
+            messageContent.textContent = message;
 
-    messageContainer.appendChild(messageContent);
+            messageContainer.appendChild(messageContent);
 
-    messagesDiv.appendChild(messageContainer);
+            messagesDiv.appendChild(messageContainer);
+        }
+
+        function toggleRightPane(show) {
+            rightPane.style.display = show ? 'block' : 'none';
+        }
+
+        // Corrected function name
+        function toggleMessageForm(show) {
+            messageForm.style.display = show ? 'block' : 'none';
+        }
+
+        function hideOptionsDiv() {
+            optionsDiv.style.display = 'none'; // Hide the options div
+        }
+
+        function playWithComputer() {
+            toggleMessageForm(true); // Show the message form
+            toggleRightPane(true); // Show the right pane
+            hideOptionsDiv(); // Hide the options div
+            // Additional logic for playing with computer
+        }
+
+        function playWithFriends() {
+            toggleMessageForm(true); // Show the message form
+            toggleRightPane(true); // Show the right pane
+            hideOptionsDiv(); // Hide the options div
+            // Additional logic for playing with friends
+        }
+
+        function showAdminPopup() {
+    var adminPopup = document.getElementById('adminPopup');
+    adminPopup.style.display = 'block';
 }
+
 
     </script>
 </body>
