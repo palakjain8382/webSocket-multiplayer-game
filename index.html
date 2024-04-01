@@ -37,10 +37,12 @@
         <div class="popup-content">
             <span class="close" onclick="closeAdminPopup()">&times;</span> <!-- Close icon -->
             <h2>Admin Login</h2>
-            <input type="password" id="adminKey" placeholder="Enter admin key...">
+            <input type="password" id="adminKey" placeholder="Enter admin key..." class="admin-input">
             <button onclick="checkAdminKey()">Submit</button>
+            <p id="error-message" class="error-message"></p> <!-- Error message block -->
         </div>
     </div>
+    
     
 
     <script>
@@ -50,13 +52,18 @@
         }
 
         function checkAdminKey() {
-            var keyInput = document.getElementById('adminKey').value;
-            if (keyInput === 'admin') {
-                window.location.href = 'admin.html'; // Redirect to admin.html
-            } else {
-                alert('Invalid admin key. Please try again.');
-            }
-        }
+    var keyInput = document.getElementById('adminKey').value;
+    if (keyInput === 'admin') {
+        window.location.href = 'admin.html'; // Redirect to admin.html
+    } else {
+        var errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = 'Invalid admin key. Please try again.';
+        errorMessage.style.display = 'block';
+        var adminInput = document.getElementById('adminKey');
+        adminInput.style.borderColor = 'red';
+    }
+}
+
 
         const ws = new WebSocket('ws://localhost:3000'); // Update URL if needed
 
