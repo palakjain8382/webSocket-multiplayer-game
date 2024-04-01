@@ -34,7 +34,7 @@
             event.preventDefault();
             const message = messageInput.value.trim();
             if (message !== '') {
-                ws.send(message + '\n'); // Append newline character
+                ws.send(message); // Append newline character
                 messageInput.value = '';
             }
         });

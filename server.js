@@ -31,29 +31,30 @@ wss.on('connection', (ws) => {
 
     ws.on('message', async (message) => {
         console.log('Message received: ', message);
-
+    
         try {
             // Attempt to parse the incoming message as JSON
             const data = JSON.parse(message);
             messages.push(data);
             broadcast(JSON.stringify({ type: 'message', data: messages }));
-
-            // Update MongoDB with the latest message
-            const db = client.db('your_database_name');
+    
+            // Update MongoDB with the latest message by appending it to the messages array
+            const db = client.db('aws-multiplayer-game');
             const collection = db.collection('messages');
-            await collection.updateOne({}, { $set: { latestMessage: data } }, { upsert: true });
+            await collection.updateOne({}, { $push: { messages: data } }, { upsert: true });
         } catch (error) {
             // If parsing as JSON fails, treat it as plain text
             console.error('Error parsing JSON:', error.message);
             messages.push(message.toString()); // Store plain text as string
             broadcast(JSON.stringify({ type: 'message', data: messages }));
-
-            // Update MongoDB with the latest message
-            const db = client.db('your_database_name');
+    
+            // Update MongoDB with the latest message by appending it to the messages array
+            const db = client.db('aws-multiplayer-game');
             const collection = db.collection('messages');
-            await collection.updateOne({}, { $set: { latestMessage: message.toString() } }, { upsert: true });
+            await collection.updateOne({}, { $push: { messages: message.toString() } }, { upsert: true });
         }
     });
+    
 
     ws.on('close', () => {
         console.log('User disconnected');
