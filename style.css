@@ -1,0 +1,236 @@
+body {
+    display: flex;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    padding-top: 60px;
+}
+#left-pane, #right-pane {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+#left-pane {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+}
+#messageForm {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column; /* Change to column */
+    align-items: center; /* Center align items */
+}
+#messageInput {
+    width: 100%; /* Take full width */
+    max-width: 300px; /* Limit maximum width */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-bottom: 10px; /* Add margin to separate from button */
+    outline: none;
+}
+#submitButton {
+    width: 100%; /* Take full width */
+    max-width: 300px; /* Limit maximum width */
+    padding: 10px 0; /* Adjust padding */
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    outline: none;
+    transition: background-color 0.3s; /* Add transition effect */
+}
+#submitButton:hover {
+    background-color: #0056b3;
+}
+#right-pane {
+    background-color: #e9ecef; /* Light grey background */
+    padding: 20px;
+    overflow: auto;
+}
+#right-pane h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+}
+#messages {
+    overflow-y: auto;
+}
+.message {
+    margin-bottom: 10px;
+}
+.message-number {
+    font-weight: bold;
+    margin-right: 5px;
+}
+.message-content {
+    display: inline;
+}
+@media only screen and (max-width: 600px) {
+    #left-pane {
+        margin-top: 0;
+    }
+}
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #b9b9b9;
+    color: #141414;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    padding: 10px 20px;
+}
+
+.navbar-right {
+    display: flex;
+    float: right;
+    align-items: center;
+    margin-right: 55px;
+}
+
+.settings-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+}
+
+img{
+    padding-right: 10px;
+}
+
+#admin {
+    font-weight: bold;
+    display: inline-block;
+    margin: 0;
+}
+
+#nav-icon, #admin{
+    cursor: pointer;
+}
+
+/* Add this to your existing CSS */
+
+.options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.option-btn {
+    margin-bottom: 10px;
+    padding: 10px 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.option-btn:hover {
+    background-color: #0056b3;
+}
+
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center horizontally and vertically */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    display: flex;
+    justify-content: center; /* Horizontally center content */
+    align-items: center; /* Vertically center content */
+    z-index: 1000; /* Ensure popup appears above other elements */
+}
+
+.popup-content {
+    background-color: #f9f9f9; /* Lighter background color */
+    padding: 20px;
+    width: 300px; /* Set a fixed width */
+    height: 300px; /* Set a fixed height */
+    border-radius: 10px; /* Increase border radius for smoother corners */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3); /* Enhance box shadow for depth */
+    display: flex; /* Change to flex to center content */
+    flex-direction: column; /* Align items vertically */
+    justify-content: center; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+    position: relative; /* Position relative to contain close icon */
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    color: #333;
+    z-index: 1; /* Ensure close icon appears above popup content */
+}
+
+.close:hover {
+    color: #f00;
+}
+
+
+.popup-content h2 {
+    margin-top: 0; /* Remove top margin for heading */
+    margin-bottom: 20px; /* Keep bottom margin for spacing */
+    font-size: 24px; /* Increase font size for heading */
+    color: #333; /* Use dark text color for better contrast */
+}
+
+.popup-content input[type="password"],
+.popup-content button {
+    width: calc(100% - 40px); /* Take full width minus padding */
+    padding: 12px; /* Increase padding for better touch target */
+    margin-bottom: 15px; /* Add margin between input and button */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+}
+
+.popup-content button {
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.popup-content button:hover {
+    background-color: #0056b3;
+}
+
+.error-message {
+    color: red;
+    margin-top: 5px;
+    display: none;
+}
+
+.admin-input {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    padding: 10px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.admin-input:focus {
+    border-color: #007bff;
+}

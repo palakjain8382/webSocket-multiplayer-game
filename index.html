@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-right">
+            <button class="settings-btn" onclick="showSettingsPopup()">
+                <img src="settings-icon.png" alt="Settings" width="30px">
+            </button>
+            
+            <img id="nav-icon" src="user.png" alt="User" width="30px" onclick="showProfilePopup()">
+            
+     
+
+            <p id="admin"  onclick="showAdminPopup()">Admin</p>
+        </div>
+    </nav>
+
+    <div id="left-pane">
+        <div class="options">
+            <h2>Choose an option:</h2>
+            <button class="option-btn" onclick="playWithComputer()">Play with Computer</button>
+            <button class="option-btn" onclick="playWithFriends()">Play with Friends</button>
+        </div>
+        <form id="messageForm" style="display: none;"> <!-- Initially hidden -->
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <button type="submit" id="submitButton">Send</button>
+        </form>
+    </div>
+    <div id="right-pane" style="display: none;"> <!-- Initially hidden -->
+        <h2>Chat Messages</h2>
+        <div id="messages"></div>
+    </div>
+
+    <div id="adminPopup" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span class="close" onclick="closeAdminPopup()">&times;</span> <!-- Close icon -->
+            <h2>Admin Login</h2>
+            <input type="password" id="adminKey" placeholder="Enter admin key..." class="admin-input">
+            <button onclick="checkAdminKey()">Submit</button>
+            <p id="error-message" class="error-message"></p> <!-- Error message block -->
+        </div>
+    </div>
+    
+    <div id="settingsPopup" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span class="close" onclick="closeSettingsPopup()">&times;</span>
+            <h2>Settings</h2>
+            <!-- Add settings content here -->
+        </div>
+    </div>
+    
+    <div id="profilePopup" class="popup" style="display: none;">
+        <div class="popup-content"> 
+            <span class="close" onclick="closeProfilePopup()">&times;</span>
+            <h2>Profile</h2>
+            <!-- Add profile content here -->
+        </div>
+    </div> 
+    
+
+    <script>
+        function closeAdminPopup() {
+            var adminPopup = document.getElementById('adminPopup');
+            adminPopup.style.display = 'none';
+        }
+
+        function checkAdminKey() {
+    var keyInput = document.getElementById('adminKey').value;
+    if (keyInput === 'admin') {
+        window.location.href = 'admin.html'; // Redirect to admin.html
+    } else {
+        var errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = 'Invalid admin key. Please try again.';
+        errorMessage.style.display = 'block';
+        var adminInput = document.getElementById('adminKey');
+        adminInput.style.borderColor = 'red';
+    }
+}
+
+
+        const ws = new WebSocket('ws://localhost:3000'); // Update URL if needed
+
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+        const messagesDiv = document.getElementById('messages');
+        const rightPane = document.getElementById('right-pane');
+        const optionsDiv = document.querySelector('.options'); // Get options div
+
+        ws.onmessage = function (event) {
+            const message = JSON.parse(event.data);
+            if (message.type === 'messages') {
+                displayMessages(message.data);
+            } else if (message.type === 'message') {
+                displayMessage(message.data);
+            }
+        };
+
+        messageForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                ws.send(JSON.stringify({ type: 'message', data: message })); // Wrap message in an object
+                messageInput.value = '';
+            }
+        });
+
+        function displayMessages(messages) {
+            messagesDiv.innerHTML = ''; // Clear existing messages
+            messages.forEach((message, index) => {
+                displayMessage(message, index + 1);
+            });
+        }
+
+        function displayMessage(message) {
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('message');
+
+            const messageContent = document.createElement('span');
+            messageContent.classList.add('message-content');
+            messageContent.textContent = message;
+
+            messageContainer.appendChild(messageContent);
+
+            messagesDiv.appendChild(messageContainer);
+        }
+
+        function toggleRightPane(show) {
+            rightPane.style.display = show ? 'block' : 'none';
+        }
+
+        // Corrected function name
+        function toggleMessageForm(show) {
+            messageForm.style.display = show ? 'block' : 'none';
+        }
+
+        function hideOptionsDiv() {
+            optionsDiv.style.display = 'none'; // Hide the options div
+        }
+
+        function playWithComputer() {
+            toggleMessageForm(true); // Show the message form
+            toggleRightPane(true); // Show the right pane
+            hideOptionsDiv(); // Hide the options div
+            // Additional logic for playing with computer
+        }
+
+        function playWithFriends() {
+            toggleMessageForm(true); // Show the message form
+            toggleRightPane(true); // Show the right pane
+            hideOptionsDiv(); // Hide the options div
+            // Additional logic for playing with friends
+        }
+
+        function showAdminPopup() {
+    var adminPopup = document.getElementById('adminPopup');
+    adminPopup.style.display = 'block';
+}
+
+// Add functions to show and close settings and profile popups
+function showSettingsPopup() {
+    var settingsPopup = document.getElementById('settingsPopup');
+    settingsPopup.style.display = 'block';
+}
+
+function closeSettingsPopup() {
+    var settingsPopup = document.getElementById('settingsPopup');
+    settingsPopup.style.display = 'none';
+}
+
+function showProfilePopup() {
+    var profilePopup = document.getElementById('profilePopup');
+    profilePopup.style.display = 'block';
+}
+
+function closeProfilePopup() {
+    var profilePopup = document.getElementById('profilePopup');
+    profilePopup.style.display = 'none';
+}
+
+
+
+    </script>
+</body>
+</html>
