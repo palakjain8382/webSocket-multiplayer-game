@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Group Chat</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    .chat-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto 50px auto;
+        padding: 20px;
+    }
+    .message-box {
+        background-color: #f2f2f2;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .message-box p {
+        margin: 5px 0;
+    }
+    .input-container {
+        position: fixed;
+        bottom: 0;
+        width: 70%;
+        background-color: #f2f2f2;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 70px;
+    }
+    .input-container input[type="text"] {
+        width: calc(100% - 80px);
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    .input-container button {
+        padding: 8px 15px;
+        border: none;
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .sidenav {
+        height: 100%;
+        width: 250px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: #333;
+        overflow-x: hidden;
+        padding-top: 20px;
+    }
+
+    .sidenav{
+        color: #fff;
+        padding: 10px 15px;
+    }
+
+    .sidenav {
+        padding: 10px 15px;
+        text-decoration: none;
+        font-size: 18px;
+        color: #fff;
+        margin-bottom: 10px;
+    }
+
+    .main {
+        margin-left: 250px; /* Same width as the sidenav */
+        padding: 20px;
+    }
+    .fixed-bar {
+        position: fixed;
+        bottom: 0;
+        background-color: #333;
+        padding: 10px 15px;
+        display: inline-block;
+    }
+
+    .fixed-bar img {
+        width: 20px;
+        margin-right: 10px;
+        display: inline-block;
+    }
+    
+    a{
+        text-decoration: none;
+        color: #fff;
+    }
+</style>
+</head>
+<body>
+<!-- Side navigation -->
+<div class="sidenav">
+    <h2>Room Info</h2>
+    <p>Room ID: <span id="roomID"></span><a href="#"><img src="share-icon.png" width="20px" alt="Share"> </a></p>
+    <h3>Players:</h3>
+    <ul id="playerList"></ul>
+    <!-- Add other icons/links here -->
+    <span class="fixed-bar">
+        
+        <a href="#"><img src="settings-icon.png" alt="Settings"> </a>
+        <a href="#" id="adminLink">Admin</a>
+    </span>
+</div>
+
+<!-- Main content -->
+<div class="main">
+    <div class="chat-container" id="chat-container">
+        <!-- Messages will be dynamically added here -->
+    </div>
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+<script>
+ 
+     // Retrieve room ID from URL parameter
+     const urlParams = new URLSearchParams(window.location.search);
+    const roomID = urlParams.get('roomID');
+
+    // Display room ID for demonstration (You can remove this line)
+    document.getElementById('roomID').innerText = roomID;
+
+    // Connect to WebSocket server
+    const ws = new WebSocket('ws://localhost:3000');
+
+    ws.onopen = function() {
+        // Send a joinRoom message to the server
+        const joinRoomMessage = {
+            type: 'joinRoom',
+            roomName: roomID,
+            username: 'Player' // You can set the player's username here
+        };
+        ws.send(JSON.stringify(joinRoomMessage));
+    };
+
+    // Handle incoming messages from the server
+    ws.onmessage = function(event) {
+        const message = JSON.parse(event.data);
+        if (message.type === 'joinedRoom') {
+            // Handle joinedRoom message from the server
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = ''; // Clear existing player list
+            message.players.forEach(player => {
+                const playerName = document.createElement('li');
+                playerName.textContent = player;
+                playerList.appendChild(playerName);
+            });
+        }
+    };
+
+    function sendMessage() {
+        var messageInput = document.getElementById("message-input");
+        var message = messageInput.value.trim();
+        if (message !== "") {
+            var chatContainer = document.getElementById("chat-container");
+            var messageBox = document.createElement("div");
+            messageBox.classList.add("message-box");
+            messageBox.innerHTML = "<p>Member_name: " + message + "</p>";
+            chatContainer.appendChild(messageBox);
+            messageInput.value = ""; // Clear input after sending message
+            // You can add further logic here such as sending the message to a server
+        } else {
+            alert("Please enter a message!");
+        }
+    }
+</script>
+</body>
+</html>

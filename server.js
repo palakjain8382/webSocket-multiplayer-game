@@ -4,12 +4,14 @@ const { MongoClient } = require('mongodb');
 
 const server = http.createServer();
 const wss = new WebSocket.Server({ server });
-  
-let clients = [];
-let messages = [];
+
+let rooms = {}; // Object to store rooms
+let clientRooms = {}; // Object to map clients to rooms
+let messages = {}; // Object to store messages for each room
+let currentPlayerName = '';
 
 // MongoDB connection URI
-const uri = 'mongodb://localhost:27017'; 
+const uri = 'mongodb://localhost:27017';
 const client = new MongoClient(uri);
 
 // Connect to MongoDB
@@ -19,79 +21,152 @@ client.connect()
     })
     .catch(err => {
         console.error('Error connecting to MongoDB:', err);
-    }); 
+    });
 
 wss.on('connection', (ws) => {
     console.log('A user connected');
 
-    clients.push(ws);
-
-    // Send all stored messages to the newly connected client
-    ws.send(JSON.stringify({ type: 'messages', data: messages }));
-
     ws.on('message', async (message) => {
-        console.log('Message received: ', message);
-    
+       
+
         try {
             // Attempt to parse the incoming message as JSON
             const data = JSON.parse(message);
-            handleMessage(data); // Handle JSON message
+            handleMessage(data, ws); // Handle JSON message
         } catch (error) {
             // If parsing as JSON fails, treat it as plain text
             console.error('Error parsing JSON:', error.message);
-            handlePlainTextMessage(message.toString()); // Handle plain text message
         }
     });
-    
-    function handleMessage(data) {
-        // Your logic for handling JSON messages
-        if (data.type === 'message') {
-            messages.push(data.data);
-            broadcast(JSON.stringify({ type: 'message', data: data.data }));
-            // Update MongoDB with the latest message by appending it to the messages array
-            updateMongoDB(data.data);
-        } else if (data.type === 'messages') {
-            messages = data.data;
-            broadcast(JSON.stringify({ type: 'messages', data: messages }));
-            // Update MongoDB with the latest messages array
-            updateMongoDB(messages);
-        }
-    }
-    
-    function handlePlainTextMessage(message) {
-        // Your logic for handling plain text messages
-        messages.push(message);
-        broadcast(JSON.stringify({ type: 'message', data: message }));
-        // Update MongoDB with the latest message by appending it to the messages array
-        updateMongoDB(message);
-    }
-    
-    async function updateMongoDB(data) {
-        const db = client.db('aws-multiplayer-game');
-        const collection = db.collection('messages');
-        await collection.updateOne({}, { $push: { messages: data } }, { upsert: true });
-    }
-    
-    
 
-    ws.on('close', () => {
-        console.log('User disconnected');
-
-        // Remove client from clients array
-        clients = clients.filter((client) => client !== ws);
-    });
+    // ws.on('close', () => {
+    //     console.log('User disconnected');
+    //     removeClientFromRoom(ws);
+    // });
 });
 
-function broadcast(message) {
-    clients.forEach((client) => {
+function handleMessage(data, ws) {
+    switch (data.type) {
+        case 'createRoom':
+            createRoom(data.roomName, ws);
+            break;
+        case 'joinRoom':
+            joinRoom(data.roomName, ws);
+            break;
+        case 'message':
+            sendMessageToRoom(data.roomName, data.message, ws);
+            break;
+        case 'setName':
+            // Handle setting the user's name
+            ws.username = data.username;
+            currentPlayerName = data.username;
+            console.log("username: ",ws.username);
+            break;
+        default:
+            console.error('Invalid message type:', data.type);
+    }
+}
+
+
+function createRoom(roomName, ws) {
+    if (!rooms[roomName]) {
+        rooms[roomName] = { players: [], clients: [ws] };
+        clientRooms[ws] = roomName;
+        messages[roomName] = [];
+
+        ws.send(JSON.stringify({ type: 'roomCreated', roomName }));
+        console.log('Room created:', roomName);
+        broadcastPlayerList(roomName); // Broadcast the player list to all clients in the room
+        printPlayersAndRooms();
+    } else {
+        ws.send(JSON.stringify({ type: 'roomExists', roomName }));
+        console.log('Room already exists:', roomName);
+    }
+}
+
+function joinRoom(roomName, ws) {
+    if (!rooms[roomName]) {
+        createRoom(roomName, ws);
+    }
+    if (rooms[roomName]) {
+        // Add the player to the room
+        // rooms[roomName].players.push(currentPlayerName);
+        rooms[roomName].clients.push(ws);
+        clientRooms[ws] = roomName;
+
+        // Add the new player to the player list in the room
+        rooms[roomName].players.push(currentPlayerName);
+
+        // Send roomJoined message to the client with the player's name after a delay
+        setTimeout(() => {
+            ws.send(JSON.stringify({ type: 'joinedRoom', roomName, players: rooms[roomName].players, currentPlayerName }));
+            console.log("players list...: ", rooms[roomName].players);
+
+            // Send all stored messages to the newly joined client
+            ws.send(JSON.stringify({ type: 'messages', data: messages[roomName] }));
+
+            console.log('User ', currentPlayerName, ' joined room:', roomName);
+            broadcastPlayerList(roomName); // Broadcast the updated player list to all clients in the room
+        }, 4000); // Adjust the delay time (in milliseconds) as needed
+    } else {
+        console.log('Failed to join room. Room not found:', roomName);
+        // Optionally, you can handle this case by notifying the client and taking appropriate action
+    }
+}
+
+
+function sendMessageToRoom(roomName, message, ws) {
+    if (rooms[roomName] && clientRooms[ws] === roomName) {
+        const messageData = { sender: ws.username, message };
+        messages[roomName].push(messageData);
+        broadcastToRoom(roomName, { type: 'message', data: messageData });
+        updateMongoDB(roomName, messageData);
+        console.log('Message sent to room:', roomName);
+    } else {
+        console.log('Failed to send message. Room not found or unauthorized.');
+    }
+}
+
+function broadcastToRoom(roomName, message) {
+    rooms[roomName].clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(message); // Send the message directly
+            client.send(JSON.stringify(message));
         }
     });
 }
 
+async function updateMongoDB(roomName, messageData) {
+    const db = client.db('aws-multiplayer-game');
+    const collection = db.collection('rooms');
+    await collection.updateOne({ roomName }, { $push: { messages: messageData } }, { upsert: true });
+}
+
+// function removeClientFromRoom(ws) {
+//     const roomName = clientRooms[ws];
+//     if (rooms[roomName]) {
+//         rooms[roomName].players = rooms[roomName].players.filter(player => player !== ws.username);
+//         rooms[roomName].clients = rooms[roomName].clients.filter(client => client !== ws);
+//         delete clientRooms[ws];
+//         console.log('Client removed from room:', roomName);
+//         broadcastPlayerList(roomName);
+//     }
+// }
 
 
+function broadcastPlayerList(roomName) {
+    const playerList = rooms[roomName].players;
+    const message = JSON.stringify({ type: 'playerList', data: playerList });
+    broadcastToRoom(roomName, message);
+}
+
+function printPlayersAndRooms() {
+    console.log('Current rooms:');
+    Object.entries(rooms).forEach(([roomName, room]) => {
+        console.log(`Room: ${roomName}`);
+        console.log('Players:', room.players.join(', '));
+        console.log('-------------');
+    });
+}
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

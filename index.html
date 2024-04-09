@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Chat</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body{
+            display: flex;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
+        <!-- Display the name dynamically -->
+        <p id="userNameDisplay" style="display: none;"></p> <!-- Initially hidden -->
         <div class="navbar-right">
             <button class="settings-btn" onclick="showSettingsPopup()">
                 <img src="settings-icon.png" alt="Settings" width="30px">
@@ -15,17 +22,25 @@
             
             <img id="nav-icon" src="user.png" alt="User" width="30px" onclick="showProfilePopup()">
             
-     
-
             <p id="admin"  onclick="showAdminPopup()">Admin</p>
+            <!-- Move nameInputPopup here -->
+            <div id="nameInputPopup" class="popup" style="display: block !important;">
+                <div class="popup-content">
+                    <span class="close" onclick="closeNameInputPopup()">&times;</span>
+                    <h2>Enter Your Name</h2>
+                    <input type="text" id="nameInput" placeholder="Your Name" class="name-input">
+                    <button onclick="sendNameToServer()">Join Game</button>
+                </div>
+            </div>
         </div>
     </nav>
 
     <div id="left-pane">
         <div class="options">
             <h2>Choose an option:</h2>
-            <button class="option-btn" onclick="playWithComputer()">Play with Computer</button>
-            <button class="option-btn" onclick="playWithFriends()">Play with Friends</button>
+            <!-- Updated onclick attributes to call functions that show the name input popup -->
+            <button class="option-btn" onclick="playWith('friends')">Play with Friends</button>
+            <button class="option-btn" onclick="playWith('computer')">Play with Computer</button>
         </div>
         <form id="messageForm" style="display: none;"> <!-- Initially hidden -->
             <input type="text" id="messageInput" placeholder="Type your message...">
@@ -56,134 +71,130 @@
     </div>
     
     <div id="profilePopup" class="popup" style="display: none;">
-        <div class="popup-content">
+        <div class="popup-content"> 
             <span class="close" onclick="closeProfilePopup()">&times;</span>
             <h2>Profile</h2>
             <!-- Add profile content here -->
         </div>
+    </div> 
+
+    <div id="joinCreateRoomPopup" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span class="close" onclick="closeJoinCreateRoomPopup()">&times;</span>
+            <h2>Room ID</h2>
+            <div id="joinRoomButtons">
+                <button onclick="showJoinRoomInput()">Join Room</button>
+                <button onclick="createRoom()">Create Room</button>
+            </div>
+            <div id="joinRoomInput" style="display: none;">
+                <input type="text" id="roomIDInput" placeholder="Enter Room ID">
+                <button onclick="submitJoinRoom()">Submit</button>
+                <button onclick="goBack()">Back</button> <!-- New "Back" button -->
+            </div>
+        </div>
     </div>
     
 
+
     <script>
-        function closeAdminPopup() {
-            var adminPopup = document.getElementById('adminPopup');
-            adminPopup.style.display = 'none';
+        const ws = new WebSocket('ws://localhost:3000'); // WebSocket connection with the server
+
+        // Function to show the name input popup when joining a room
+        function showNameInputPopup(roomType) {
+            const nameInputPopup = document.getElementById('nameInputPopup');
+            nameInputPopup.style.display = 'block';
+            // Set room type as a data attribute to access it later
+            nameInputPopup.setAttribute('data-room-type', roomType);
         }
 
-        function checkAdminKey() {
-    var keyInput = document.getElementById('adminKey').value;
-    if (keyInput === 'admin') {
-        window.location.href = 'admin.html'; // Redirect to admin.html
+        // Function to close the name input popup
+        function closeNameInputPopup() {
+            const nameInputPopup = document.getElementById('nameInputPopup');
+            nameInputPopup.style.display = 'none';
+        }
+
+        // Function to send the entered name to the server
+function sendNameToServer() {
+    const name = document.getElementById('nameInput').value;
+    ws.send(JSON.stringify({ type: 'setName', username: name })); // Change "name" to "username"
+    document.getElementById('userNameDisplay').innerText = name; // Displaying the name in the navbar
+    document.getElementById('userNameDisplay').style.display = 'inline-block'; // Making the name visible in the navbar
+    closeNameInputPopup(); // Close the name input popup after sending the name
+}
+
+// Function to show input field for joining a room
+function showJoinRoomInput() {
+    // Hide "Join Room" and "Create Room" buttons
+    document.getElementById('joinRoomButtons').style.display = 'none';
+    // Show input field and submit button
+    document.getElementById('joinRoomInput').style.display = 'block';
+}
+
+// Function to submit room ID for joining a room
+function submitJoinRoom() {
+    const roomID = document.getElementById("roomIDInput").value;
+    if (roomID.trim() !== "") {
+        // Now you can proceed with joining the room using the entered room ID
+        // For example, redirecting to a join room page with room ID as a parameter
+        window.location.href = `room.html?roomID=${roomID}`; // Replace 'room.html' with your actual join room page
+        closeJoinCreateRoomPopup(); // Close the popup after submitting room ID
     } else {
-        var errorMessage = document.getElementById('error-message');
-        errorMessage.textContent = 'Invalid admin key. Please try again.';
-        errorMessage.style.display = 'block';
-        var adminInput = document.getElementById('adminKey');
-        adminInput.style.borderColor = 'red';
+        alert("Please enter a room ID.");
     }
 }
 
-
-        const ws = new WebSocket('ws://localhost:3000'); // Update URL if needed
-
-        const messageForm = document.getElementById('messageForm');
-        const messageInput = document.getElementById('messageInput');
-        const messagesDiv = document.getElementById('messages');
-        const rightPane = document.getElementById('right-pane');
-        const optionsDiv = document.querySelector('.options'); // Get options div
-
-        ws.onmessage = function (event) {
-            const message = JSON.parse(event.data);
-            if (message.type === 'messages') {
-                displayMessages(message.data);
-            } else if (message.type === 'message') {
-                displayMessage(message.data);
-            }
-        };
-
-        messageForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-            const message = messageInput.value.trim();
-            if (message !== '') {
-                ws.send(JSON.stringify({ type: 'message', data: message })); // Wrap message in an object
-                messageInput.value = '';
-            }
-        });
-
-        function displayMessages(messages) {
-            messagesDiv.innerHTML = ''; // Clear existing messages
-            messages.forEach((message, index) => {
-                displayMessage(message, index + 1);
-            });
-        }
-
-        function displayMessage(message) {
-            const messageContainer = document.createElement('div');
-            messageContainer.classList.add('message');
-
-            const messageContent = document.createElement('span');
-            messageContent.classList.add('message-content');
-            messageContent.textContent = message;
-
-            messageContainer.appendChild(messageContent);
-
-            messagesDiv.appendChild(messageContainer);
-        }
-
-        function toggleRightPane(show) {
-            rightPane.style.display = show ? 'block' : 'none';
-        }
-
-        // Corrected function name
-        function toggleMessageForm(show) {
-            messageForm.style.display = show ? 'block' : 'none';
-        }
-
-        function hideOptionsDiv() {
-            optionsDiv.style.display = 'none'; // Hide the options div
-        }
-
-        function playWithComputer() {
-            toggleMessageForm(true); // Show the message form
-            toggleRightPane(true); // Show the right pane
-            hideOptionsDiv(); // Hide the options div
-            // Additional logic for playing with computer
-        }
-
-        function playWithFriends() {
-            toggleMessageForm(true); // Show the message form
-            toggleRightPane(true); // Show the right pane
-            hideOptionsDiv(); // Hide the options div
-            // Additional logic for playing with friends
-        }
-
-        function showAdminPopup() {
-    var adminPopup = document.getElementById('adminPopup');
-    adminPopup.style.display = 'block';
+// Function to handle closing the join/create room popup
+function closeJoinCreateRoomPopup() {
+    const joinCreateRoomPopup = document.getElementById('joinCreateRoomPopup');
+    joinCreateRoomPopup.style.display = 'none';
 }
 
-// Add functions to show and close settings and profile popups
-function showSettingsPopup() {
-    var settingsPopup = document.getElementById('settingsPopup');
-    settingsPopup.style.display = 'block';
-}
-
-function closeSettingsPopup() {
-    var settingsPopup = document.getElementById('settingsPopup');
-    settingsPopup.style.display = 'none';
-}
-
-function showProfilePopup() {
-    var profilePopup = document.getElementById('profilePopup');
-    profilePopup.style.display = 'block';
-}
-
-function closeProfilePopup() {
-    var profilePopup = document.getElementById('profilePopup');
-    profilePopup.style.display = 'none';
+// Function to handle creating a room
+function createRoom() {
+    // Close the popup
+    closeJoinCreateRoomPopup();
+    const roomID = generateRoomID(); // Generate a random room ID
+    window.location.href = `room.html?roomID=${roomID}`; 
 }
 
 
+// Function to handle the "Play with Friends" button click
+function playWith(option) {
+    // Show the join/create room popup
+    const joinCreateRoomPopup = document.getElementById('joinCreateRoomPopup');
+    joinCreateRoomPopup.style.display = 'block';
+}
+
+
+// Function to handle joining a room
+function joinRoom() {
+    const roomID = document.getElementById("roomIDInput").value;
+    if (roomID.trim() !== "") {
+        // Now you can proceed with joining the room using the entered room ID
+        // For example, redirecting to a join room page with room ID as a parameter
+        window.location.href = `join_room.html?roomID=${roomID}`; // Replace 'join_room.html' with your actual join room page
+        closeJoinCreateRoomPopup(); // Close the popup after clicking Join
+    } else {
+        alert("Please enter a room ID.");
+    }
+}
+
+// Function to go back from join room input to join/create room buttons
+function goBack() {
+    // Show "Join Room" and "Create Room" buttons
+    document.getElementById('joinRoomButtons').style.display = 'block';
+    // Hide input field and submit button
+    document.getElementById('joinRoomInput').style.display = 'none';
+}
+
+function generateRoomID() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let roomID = '';
+    for (let i = 0; i < 6; i++) { // Adjust the length of the room ID as needed
+        roomID += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return roomID;
+}
 
     </script>
 </body>
