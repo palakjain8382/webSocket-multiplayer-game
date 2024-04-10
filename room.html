@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        p{
-    text-align: center;
-}
+        p {
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
     <nav class="navbar">
         <!-- Display the player's name dynamically -->
@@ -19,9 +21,9 @@
             <button class="settings-btn" onclick="showSettingsPopup()">
                 <img src="settings-icon.png" alt="Settings" width="30px">
             </button>
-            
+
             <img id="nav-icon" src="user.png" alt="User" width="30px" onclick="showProfilePopup()">
-            
+
             <p id="admin" onclick="showAdminPopup()">Admin</p>
         </div>
     </nav>
@@ -47,7 +49,7 @@
         // Connect to WebSocket server
         const ws = new WebSocket('ws://localhost:3000');
 
-        ws.onopen = function() {
+        ws.onopen = function () {
             // Send a joinRoom message to the server
             const joinRoomMessage = {
                 type: 'joinRoom',
@@ -58,37 +60,71 @@
         };
 
         function updatePlayerList(roomName) {
-    const playerList = rooms[roomName].players;
-    const message = JSON.stringify({ type: 'playerList', data: playerList });
+            const playerList = rooms[roomName].players;
+            const message = JSON.stringify({ type: 'playerList', data: playerList });
 
-    // Broadcast the updated player list to all clients in all rooms
-    Object.keys(rooms).forEach(room => {
-        broadcastToRoom(room, message);
-    });
-}
+            // Broadcast the updated player list to all clients in all rooms
+            Object.keys(rooms).forEach(room => {
+                broadcastToRoom(room, message);
+            });
+        }
 
 
-        ws.onmessage = function(event) {
-    const message = JSON.parse(event.data);
-    if (message.type === 'joinedRoom') {
-        // Handle joinedRoom message from the server
-        const playerList = document.getElementById('playerList');
-        playerList.innerHTML = ''; // Clear existing player list
-        message.players.forEach(player => {
-            const playerName = document.createElement('p');
-            playerName.textContent = player;
-            playerList.appendChild(playerName);
-        });
-        // Display the user's name (currentPlayerName)
-        document.getElementById('userNameDisplay').textContent = message.currentPlayerName;
-        document.getElementById('userNameDisplay').style.display = 'inline-block';
-    }
-};
+        ws.onmessage = function (event) {
+            const message = JSON.parse(event.data);
+            switch (message.type) {
+                case 'joinedRoom':
+                    // Handle joinedRoom message from the server
+                    const playerList = document.getElementById('playerList');
+                    playerList.innerHTML = ''; // Clear existing player list
+                    message.players.forEach(player => {
+                        const playerName = document.createElement('p');
+                        playerName.textContent = player;
+                        playerList.appendChild(playerName);
+                    });
+                    // Display the user's name (currentPlayerName)
+                    document.getElementById('userNameDisplay').textContent = message.currentPlayerName;
+                    document.getElementById('userNameDisplay').style.display = 'inline-block';
+                    break;
+                case 'gameStarted':
+                    // Handle the game start event here
+                    // You can add your game initialization logic
+                    // For example, display game UI, initialize game state, etc.
+                    console.log('Game started!');
+                    break;
+                case 'redirectToChat':
+                    window.location.href = `chat.html?roomID=${roomID}`;
+                    break;
+                // Handle other message types as needed
+            }
+        };
+
 
         // Event listener for the "Start Game" button
-        document.getElementById('startGameBtn').addEventListener('click', function() {
-            window.location.href = `chat.html?roomID=${roomID}`;
+        document.getElementById('startGameBtn').addEventListener('click', function () {
+            // Send a message to the server indicating that the game should start
+            const startGameMessage = {
+                type: 'startGame',
+                roomName: roomID
+            };
+            ws.send(JSON.stringify(startGameMessage));
+
+            // Dynamically create a WebSocket connection to the chat room
+            // Dynamically create a WebSocket connection to the chat room
+const chatRoomURL = `ws://${window.location.hostname}:${window.location.port}/chat?roomID=${roomID}`;
+const chatRoomWS = new WebSocket(chatRoomURL);
+
+
+            // Handle the connection open event
+            chatRoomWS.onopen = function () {
+                // Redirect players to the chat room
+                window.location.href = `chat.html?roomID=${roomID}`;
+            };
+
+            // Handle errors and other events as needed
         });
+
     </script>
 </body>
+
 </html>

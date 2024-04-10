@@ -62,6 +62,9 @@ function handleMessage(data, ws) {
             currentPlayerName = data.username;
             console.log("username: ",ws.username);
             break;
+        case 'startGame':
+            startGame(data.roomName);
+            break;
         default:
             console.error('Invalid message type:', data.type);
     }
@@ -117,15 +120,32 @@ function joinRoom(roomName, ws) {
 
 function sendMessageToRoom(roomName, message, ws) {
     if (rooms[roomName] && clientRooms[ws] === roomName) {
-        const messageData = { sender: ws.username, message };
+        const playerName = ws.username;
+        const messageData = { playerName, message };
+
+        // Push the new message to the messages array for the room
         messages[roomName].push(messageData);
-        broadcastToRoom(roomName, { type: 'message', data: messageData });
-        updateMongoDB(roomName, messageData);
+
+        // Create the chat object with all messages for the room
+        const chatObject = {
+            type: 'chatUpdate',
+            roomName: roomName,
+            messages: messages[roomName]
+        };
+
+        // Broadcast the updated chat object to all clients in the room
+        broadcastToRoom(roomName, chatObject);
+
+        // Update MongoDB with the message
+        updateMongoDB(roomName, playerName, message);
+
         console.log('Message sent to room:', roomName);
     } else {
         console.log('Failed to send message. Room not found or unauthorized.');
     }
 }
+
+
 
 function broadcastToRoom(roomName, message) {
     rooms[roomName].clients.forEach(client => {
@@ -135,10 +155,11 @@ function broadcastToRoom(roomName, message) {
     });
 }
 
-async function updateMongoDB(roomName, messageData) {
+
+async function updateMongoDB(roomName, playerName, message) {
     const db = client.db('aws-multiplayer-game');
     const collection = db.collection('rooms');
-    await collection.updateOne({ roomName }, { $push: { messages: messageData } }, { upsert: true });
+    await collection.updateOne({ roomName }, { $push: { messages: { playerName, message } } }, { upsert: true });
 }
 
 // function removeClientFromRoom(ws) {
@@ -151,6 +172,17 @@ async function updateMongoDB(roomName, messageData) {
 //         broadcastPlayerList(roomName);
 //     }
 // }
+
+function startGame(roomName) {
+    if (rooms[roomName]) {
+        broadcastToRoom(roomName, { type: 'gameStarted' });
+        broadcastToRoom(roomName, { type: 'redirectToChat' });
+        broadcastToRoom(playerName, { type: 'playerName' });
+        console.log('Game started in room:', roomName);
+    } else {
+        console.log('Failed to start game. Room not found:', roomName);
+    }
+}
 
 
 function broadcastPlayerList(roomName) {

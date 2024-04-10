@@ -132,49 +132,66 @@
     // Display room ID for demonstration (You can remove this line)
     document.getElementById('roomID').innerText = roomID;
 
-    // Connect to WebSocket server
-    const ws = new WebSocket('ws://localhost:3000');
+// Connect to WebSocket server
+const ws = new WebSocket('ws://localhost:3000');
 
-    ws.onopen = function() {
-        // Send a joinRoom message to the server
-        const joinRoomMessage = {
-            type: 'joinRoom',
-            roomName: roomID,
-            username: 'Player' // You can set the player's username here
-        };
-        ws.send(JSON.stringify(joinRoomMessage));
+ws.onopen = function() {
+    // Send a joinRoom message to the server
+    const joinRoomMessage = {
+        type: 'joinRoom',
+        roomName: roomID,
+        username: 'Player' // You can set the player's username here
     };
+    ws.send(JSON.stringify(joinRoomMessage));
+};
 
-    // Handle incoming messages from the server
-    ws.onmessage = function(event) {
-        const message = JSON.parse(event.data);
-        if (message.type === 'joinedRoom') {
-            // Handle joinedRoom message from the server
-            const playerList = document.getElementById('playerList');
-            playerList.innerHTML = ''; // Clear existing player list
-            message.players.forEach(player => {
-                const playerName = document.createElement('li');
-                playerName.textContent = player;
-                playerList.appendChild(playerName);
-            });
-        }
-    };
-
-    function sendMessage() {
-        var messageInput = document.getElementById("message-input");
-        var message = messageInput.value.trim();
-        if (message !== "") {
-            var chatContainer = document.getElementById("chat-container");
-            var messageBox = document.createElement("div");
-            messageBox.classList.add("message-box");
-            messageBox.innerHTML = "<p>Member_name: " + message + "</p>";
-            chatContainer.appendChild(messageBox);
-            messageInput.value = ""; // Clear input after sending message
-            // You can add further logic here such as sending the message to a server
-        } else {
-            alert("Please enter a message!");
-        }
+// Handle incoming messages from the server
+ws.onmessage = function(event) {
+    const message = JSON.parse(event.data);
+    if (message.type === 'chatMessage') {
+        // Handle chatMessage from the server
+        const chatContainer = document.getElementById('chat-container');
+        const messageBox = document.createElement('div');
+        messageBox.classList.add('message-box');
+        messageBox.innerHTML = `<p>${message.username}: ${message.text}</p>`;
+        chatContainer.appendChild(messageBox);
+    } else if (message.type === 'joinedRoom') {
+        // Handle joinedRoom message from the server
+        const playerList = document.getElementById('playerList');
+        playerList.innerHTML = ''; // Clear existing player list
+        message.players.forEach(player => {
+            const playerName = document.createElement('li');
+            playerName.textContent = player;
+            playerList.appendChild(playerName);
+        });
     }
+};
+
+function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value.trim();
+    if (message !== '') {
+        // Send the message to the WebSocket server
+        const chatMessage = {
+            type: 'chatMessage',
+            text: message,
+            username: 'Player' // You can set the username here
+        };
+        ws.send(JSON.stringify(chatMessage));
+
+        // Display the message locally
+        const chatContainer = document.getElementById('chat-container');
+        const messageBox = document.createElement('div');
+        messageBox.classList.add('message-box');
+        messageBox.innerHTML = `<p>${'Player'}: ${message}</p>`;
+        chatContainer.appendChild(messageBox);
+
+        messageInput.value = ''; // Clear input after sending message
+    } else {
+        alert('Please enter a message!');
+    }
+}
+
 </script>
 </body>
 </html>
