@@ -100,29 +100,28 @@
         };
 
 
-        // Event listener for the "Start Game" button
-        document.getElementById('startGameBtn').addEventListener('click', function () {
-            // Send a message to the server indicating that the game should start
-            const startGameMessage = {
-                type: 'startGame',
-                roomName: roomID
-            };
-            ws.send(JSON.stringify(startGameMessage));
+       // Event listener for the "Start Game" button
+document.getElementById('startGameBtn').addEventListener('click', function () {
+    // Send a message to the server indicating that the game should start
+    const startGameMessage = {
+        type: 'startGame',
+        roomName: roomID
+    };
+    ws.send(JSON.stringify(startGameMessage));
 
-            // Dynamically create a WebSocket connection to the chat room
-            // Dynamically create a WebSocket connection to the chat room
-const chatRoomURL = `ws://${window.location.hostname}:${window.location.port}/chat?roomID=${roomID}`;
-const chatRoomWS = new WebSocket(chatRoomURL);
+    // Dynamically create a WebSocket connection to the chat room
+    const chatRoomURL = `ws://${window.location.hostname}:${window.location.port}/chat?roomID=${roomID}`;
+    const chatRoomWS = new WebSocket(chatRoomURL);
 
+    // Handle the connection open event
+    chatRoomWS.onopen = function () {
+        // Redirect players to the chat room
+        window.location.href = `chat.html?roomID=${roomID}`;
+    };
 
-            // Handle the connection open event
-            chatRoomWS.onopen = function () {
-                // Redirect players to the chat room
-                window.location.href = `chat.html?roomID=${roomID}`;
-            };
+    // Handle errors and other events as needed
+});
 
-            // Handle errors and other events as needed
-        });
 
     </script>
 </body>

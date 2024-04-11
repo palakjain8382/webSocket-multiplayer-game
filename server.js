@@ -27,8 +27,6 @@ wss.on('connection', (ws) => {
     console.log('A user connected');
 
     ws.on('message', async (message) => {
-       
-
         try {
             // Attempt to parse the incoming message as JSON
             const data = JSON.parse(message);
@@ -38,11 +36,6 @@ wss.on('connection', (ws) => {
             console.error('Error parsing JSON:', error.message);
         }
     });
-
-    // ws.on('close', () => {
-    //     console.log('User disconnected');
-    //     removeClientFromRoom(ws);
-    // });
 });
 
 function handleMessage(data, ws) {
@@ -54,13 +47,18 @@ function handleMessage(data, ws) {
             joinRoom(data.roomName, ws);
             break;
         case 'message':
-            sendMessageToRoom(data.roomName, data.message, ws);
+            // Ensure that the message includes the roomName
+            if (data.roomName && rooms[data.roomName]) {
+                broadcastToRoom(data.roomName, { type: 'chatMessage', username: ws.username, text: data.message });
+                updateMongoDB(data.roomName, ws.username, data.message); // Update MongoDB with the message
+            } else {
+                console.log('Failed to send message. Room not found or unauthorized.');
+            }
             break;
         case 'setName':
-            // Handle setting the user's name
             ws.username = data.username;
             currentPlayerName = data.username;
-            console.log("username: ",ws.username);
+            console.log("username: ", ws.username);
             break;
         case 'startGame':
             startGame(data.roomName);
@@ -76,7 +74,6 @@ function createRoom(roomName, ws) {
         rooms[roomName] = { players: [], clients: [ws] };
         clientRooms[ws] = roomName;
         messages[roomName] = [];
-
         ws.send(JSON.stringify({ type: 'roomCreated', roomName }));
         console.log('Room created:', roomName);
         broadcastPlayerList(roomName); // Broadcast the player list to all clients in the room
@@ -92,60 +89,19 @@ function joinRoom(roomName, ws) {
         createRoom(roomName, ws);
     }
     if (rooms[roomName]) {
-        // Add the player to the room
-        // rooms[roomName].players.push(currentPlayerName);
         rooms[roomName].clients.push(ws);
         clientRooms[ws] = roomName;
-
-        // Add the new player to the player list in the room
         rooms[roomName].players.push(currentPlayerName);
-
-        // Send roomJoined message to the client with the player's name after a delay
         setTimeout(() => {
             ws.send(JSON.stringify({ type: 'joinedRoom', roomName, players: rooms[roomName].players, currentPlayerName }));
-            console.log("players list...: ", rooms[roomName].players);
-
-            // Send all stored messages to the newly joined client
             ws.send(JSON.stringify({ type: 'messages', data: messages[roomName] }));
-
             console.log('User ', currentPlayerName, ' joined room:', roomName);
             broadcastPlayerList(roomName); // Broadcast the updated player list to all clients in the room
-        }, 4000); // Adjust the delay time (in milliseconds) as needed
+        }, 4000);
     } else {
         console.log('Failed to join room. Room not found:', roomName);
-        // Optionally, you can handle this case by notifying the client and taking appropriate action
     }
 }
-
-
-function sendMessageToRoom(roomName, message, ws) {
-    if (rooms[roomName] && clientRooms[ws] === roomName) {
-        const playerName = ws.username;
-        const messageData = { playerName, message };
-
-        // Push the new message to the messages array for the room
-        messages[roomName].push(messageData);
-
-        // Create the chat object with all messages for the room
-        const chatObject = {
-            type: 'chatUpdate',
-            roomName: roomName,
-            messages: messages[roomName]
-        };
-
-        // Broadcast the updated chat object to all clients in the room
-        broadcastToRoom(roomName, chatObject);
-
-        // Update MongoDB with the message
-        updateMongoDB(roomName, playerName, message);
-
-        console.log('Message sent to room:', roomName);
-    } else {
-        console.log('Failed to send message. Room not found or unauthorized.');
-    }
-}
-
-
 
 function broadcastToRoom(roomName, message) {
     rooms[roomName].clients.forEach(client => {
@@ -155,35 +111,21 @@ function broadcastToRoom(roomName, message) {
     });
 }
 
-
 async function updateMongoDB(roomName, playerName, message) {
     const db = client.db('aws-multiplayer-game');
     const collection = db.collection('rooms');
     await collection.updateOne({ roomName }, { $push: { messages: { playerName, message } } }, { upsert: true });
 }
 
-// function removeClientFromRoom(ws) {
-//     const roomName = clientRooms[ws];
-//     if (rooms[roomName]) {
-//         rooms[roomName].players = rooms[roomName].players.filter(player => player !== ws.username);
-//         rooms[roomName].clients = rooms[roomName].clients.filter(client => client !== ws);
-//         delete clientRooms[ws];
-//         console.log('Client removed from room:', roomName);
-//         broadcastPlayerList(roomName);
-//     }
-// }
-
 function startGame(roomName) {
     if (rooms[roomName]) {
         broadcastToRoom(roomName, { type: 'gameStarted' });
         broadcastToRoom(roomName, { type: 'redirectToChat' });
-        broadcastToRoom(playerName, { type: 'playerName' });
         console.log('Game started in room:', roomName);
     } else {
         console.log('Failed to start game. Room not found:', roomName);
     }
 }
-
 
 function broadcastPlayerList(roomName) {
     const playerList = rooms[roomName].players;

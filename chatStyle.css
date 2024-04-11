@@ -1,0 +1,91 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.chat-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 50px auto;
+    padding: 20px;
+}
+.message-box {
+    background-color: #f2f2f2;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.message-box p {
+    margin: 5px 0;
+}
+.input-container {
+    position: fixed;
+    bottom: 0;
+    width: 70%;
+    background-color: #f2f2f2;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 70px;
+}
+.input-container input[type="text"] {
+    width: calc(100% - 80px);
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.input-container button {
+    padding: 8px 15px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.sidenav {
+    height: 100%;
+    width: 250px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #333;
+    overflow-x: hidden;
+    padding-top: 20px;
+}
+
+.sidenav{
+    color: #fff;
+    padding: 10px 15px;
+}
+
+.sidenav {
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 18px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.main {
+    margin-left: 250px; /* Same width as the sidenav */
+    padding: 20px;
+}
+.fixed-bar {
+    position: fixed;
+    bottom: 0;
+    background-color: #333;
+    padding: 10px 15px;
+    display: inline-block;
+}
+
+.fixed-bar img {
+    width: 20px;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+a{
+    text-decoration: none;
+    color: #fff;
+}
