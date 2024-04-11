@@ -56,9 +56,11 @@ function handleMessage(data, ws) {
             }
             break;
         case 'setName':
-            ws.username = data.username;
-            currentPlayerName = data.username;
-            console.log("username: ", ws.username);
+            if (!ws.username) {
+                ws.username = data.username;
+                currentPlayerName = data.username;
+                console.log("username: ", ws.username);
+            }
             break;
         case 'startGame':
             startGame(data.roomName);
@@ -84,20 +86,29 @@ function createRoom(roomName, ws) {
     }
 }
 
-function joinRoom(roomName, ws) {
+// Modify joinRoom function to prevent auto-adding users and handle reconnections
+async  function joinRoom(roomName, ws) {
     if (!rooms[roomName]) {
         createRoom(roomName, ws);
     }
     if (rooms[roomName]) {
-        rooms[roomName].clients.push(ws);
-        clientRooms[ws] = roomName;
-        rooms[roomName].players.push(currentPlayerName);
-        setTimeout(() => {
+        if (!rooms[roomName].players.includes(currentPlayerName)) { // Check if player is already in the room
+            rooms[roomName].clients.push(ws);
+            clientRooms[ws] = roomName;
+            rooms[roomName].players.push(currentPlayerName);
+            await updateMongoDBPlayer(roomName, currentPlayerName);
+            setTimeout(() => {
+                ws.send(JSON.stringify({ type: 'joinedRoom', roomName, players: rooms[roomName].players, currentPlayerName }));
+                ws.send(JSON.stringify({ type: 'messages', data: messages[roomName] }));
+                console.log('User ', currentPlayerName, ' joined room:', roomName);
+                broadcastPlayerList(roomName); // Broadcast the updated player list to all clients in the room
+            }, 4000);
+        } else {
+            // Handle reconnection, send only room data without adding user again
             ws.send(JSON.stringify({ type: 'joinedRoom', roomName, players: rooms[roomName].players, currentPlayerName }));
             ws.send(JSON.stringify({ type: 'messages', data: messages[roomName] }));
-            console.log('User ', currentPlayerName, ' joined room:', roomName);
-            broadcastPlayerList(roomName); // Broadcast the updated player list to all clients in the room
-        }, 4000);
+            console.log('User ', currentPlayerName, ' reconnected to room:', roomName);
+        }
     } else {
         console.log('Failed to join room. Room not found:', roomName);
     }
@@ -112,10 +123,29 @@ function broadcastToRoom(roomName, message) {
 }
 
 async function updateMongoDB(roomName, playerName, message) {
-    const db = client.db('aws-multiplayer-game');
+    const db = client.db('ws-aws-multiplayer-game');
     const collection = db.collection('rooms');
-    await collection.updateOne({ roomName }, { $push: { messages: { playerName, message } } }, { upsert: true });
+    await collection.updateOne(
+        { roomName },
+        {
+            $push: { messages: { playerName, message } },
+        },
+        { upsert: true }
+    );
 }
+
+async function updateMongoDBPlayer(roomName, playerName) {
+    const db = client.db('ws-aws-multiplayer-game');
+    const collection = db.collection('rooms');
+    await collection.updateOne(
+        { roomName },
+        {
+            $addToSet: { players: playerName } // Ensure unique players in the room
+        },
+        { upsert: true }
+    );
+}
+
 
 function startGame(roomName) {
     if (rooms[roomName]) {
