@@ -49,8 +49,9 @@ function handleMessage(data, ws) {
         case 'message':
             // Ensure that the message includes the roomName
             if (data.roomName && rooms[data.roomName]) {
-                broadcastToRoom(data.roomName, { type: 'chatMessage', username: ws.username, text: data.message });
-                updateMongoDB(data.roomName, ws.username, data.message); // Update MongoDB with the message
+                broadcastToRoom(data.roomName, { type: 'chatMessage', username: data.username, text: data.message });
+                console.log('in cases: ',data.username);
+                updateMongoDB(data.roomName, data.username, data.message); // Update MongoDB with the message
             } else {
                 console.log('Failed to send message. Room not found or unauthorized.');
             }
@@ -99,14 +100,14 @@ async  function joinRoom(roomName, ws) {
             await updateMongoDBPlayer(roomName, currentPlayerName);
             setTimeout(() => {
                 ws.send(JSON.stringify({ type: 'joinedRoom', roomName, players: rooms[roomName].players, currentPlayerName }));
-                ws.send(JSON.stringify({ type: 'messages', data: messages[roomName] }));
+                ws.send(JSON.stringify({ type: 'message', data: messages[roomName] }));
                 console.log('User ', currentPlayerName, ' joined room:', roomName);
                 broadcastPlayerList(roomName); // Broadcast the updated player list to all clients in the room
             }, 4000);
         } else {
             // Handle reconnection, send only room data without adding user again
             ws.send(JSON.stringify({ type: 'joinedRoom', roomName, players: rooms[roomName].players, currentPlayerName }));
-            ws.send(JSON.stringify({ type: 'messages', data: messages[roomName] }));
+            ws.send(JSON.stringify({ type: 'message', data: messages[roomName] }));
             console.log('User ', currentPlayerName, ' reconnected to room:', roomName);
         }
     } else {
@@ -123,6 +124,7 @@ function broadcastToRoom(roomName, message) {
 }
 
 async function updateMongoDB(roomName, playerName, message) {
+    console.log('playername in mongo func: ',playerName);
     const db = client.db('ws-aws-multiplayer-game');
     const collection = db.collection('rooms');
     await collection.updateOne(
@@ -133,6 +135,7 @@ async function updateMongoDB(roomName, playerName, message) {
         { upsert: true }
     );
 }
+
 
 async function updateMongoDBPlayer(roomName, playerName) {
     const db = client.db('ws-aws-multiplayer-game');

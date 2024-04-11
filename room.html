@@ -87,13 +87,10 @@
                     document.getElementById('userNameDisplay').style.display = 'inline-block';
                     break;
                 case 'gameStarted':
-                    // Handle the game start event here
-                    // You can add your game initialization logic
-                    // For example, display game UI, initialize game state, etc.
                     console.log('Game started!');
                     break;
                 case 'redirectToChat':
-                    window.location.href = `chat.html?roomID=${roomID}`;
+                    window.location.href = `chat.html?roomID=${roomID}&username=${document.getElementById('userNameDisplay').textContent}`;
                     break;
                 // Handle other message types as needed
             }

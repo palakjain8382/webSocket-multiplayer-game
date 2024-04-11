@@ -21,6 +21,7 @@
     </span>
 </div>
 
+<p id="playerNameTop"></p>
 
 <!-- Main content -->
 <div class="main">
@@ -36,9 +37,12 @@
     // Retrieve room ID from URL parameter
     const urlParams = new URLSearchParams(window.location.search);
     const roomID = urlParams.get('roomID');
+    const currentPlayerName = urlParams.get('username');
 
     // Display room ID for demonstration (You can remove this line)
     document.getElementById('roomID').innerText = roomID;
+    document.getElementById('playerNameTop').textContent = currentPlayerName;
+
 
     // Connect to WebSocket server
     const ws = new WebSocket('ws://localhost:3000');
@@ -51,7 +55,7 @@
         const joinRoomMessage = {
             type: 'joinRoom',
             roomName: roomID,
-            username: 'Player' // You can set the player's username here
+            username: currentPlayerName // You can set the player's username here
         };
         ws.send(JSON.stringify(joinRoomMessage));
     };
@@ -69,16 +73,17 @@
 
             // Store message locally
             messages.push(message);
-        } else if (message.type === 'joinedRoom') {
-            // Handle joinedRoom message from the server
-            const playerList = document.getElementById('playerList');
-            playerList.innerHTML = ''; // Clear existing player list
-            message.players.forEach(player => {
-                const playerName = document.createElement('li');
-                playerName.textContent = player;
-                playerList.appendChild(playerName);
-            });
-        } else if (message.type === 'messages') {
+        } // Handle joinedRoom message from the server
+else if (message.type === 'joinedRoom') {
+    // Handle joinedRoom message from the server
+    const playerList = document.getElementById('playerList');
+    playerList.innerHTML = ''; // Clear existing player list
+    message.players.forEach(player => {
+        const playerName = document.createElement('li');
+        playerName.textContent = player;
+        playerList.appendChild(playerName);
+    });
+        } else if (message.type === 'message') {
             // Load stored messages
             messages = message.data;
             // Display stored messages
@@ -96,7 +101,7 @@
     function sendMessage() {
         const messageInput = document.getElementById('message-input');
         const message = messageInput.value.trim();
-        ws.send(JSON.stringify({ type: 'message', roomName: roomID, message: message }));
+        ws.send(JSON.stringify({ type: 'message', roomName: roomID, message: message, username: currentPlayerName  }));
         messageInput.value = ''; // Clear the input field after sending the message
     }
 </script>
