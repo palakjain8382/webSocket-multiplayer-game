@@ -90,9 +90,9 @@ a{
     color: #fff;
 }
 
-playerNameTop{
-    margin-left: '50%';
-    margin-right: '40%';
-    background-color: 'yellowgreen';
-    text-align : 'center';
+#playerNameTop {
+    margin-left: 50%;
+    margin-right: 40%;
+    background-color: yellowgreen;
+    text-align: center;
 }

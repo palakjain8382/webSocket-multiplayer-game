@@ -1,67 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Group Chat</title>
-<link rel="stylesheet" href="chatStyle.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat</title>
+    <link rel="stylesheet" href="chatStyle.css">
 </head>
+
 <body>
-<!-- Side navigation -->
-<div class="sidenav">
-    <h2>Room Info</h2>
-    <p>Room ID: <span id="roomID"></span><a href="#"><img src="share-icon.png" width="20px" alt="Share"> </a></p>
-    <h3>Players:</h3>
-    <ul id="playerList"></ul>
-    <!-- Add other icons/links here -->
-    <span class="fixed-bar">
-        
-        <a href="#"><img src="settings-icon.png" alt="Settings"> </a>
-        <a href="#" id="adminLink">Admin</a>
-    </span>
-</div>
+    <!-- Side navigation -->
+    <div class="sidenav">
+        <h2>Room Info</h2>
+        <p>Room ID: <span id="roomID"></span><a href="#"><img src="share-icon.png" width="20px" alt="Share"> </a></p>
+        <h3>Players:</h3>
+        <ul id="playerList"></ul>
+        <!-- Add other icons/links here -->
+        <span class="fixed-bar">
 
-<p id="playerNameTop"></p>
-
-<!-- Main content -->
-<div class="main">
-    <div class="chat-container" id="chat-container">
-        <!-- Messages will be dynamically added here -->
+            <a href="#"><img src="settings-icon.png" alt="Settings"> </a>
+            <a href="#" id="adminLink">Admin</a>
+        </span>
     </div>
-    <div class="input-container">
-        <input type="text" id="message-input" placeholder="Type your message...">
-        <button onclick="sendMessage()">Send</button>
+
+    <p id="playerNameTop"></p>
+
+    <!-- Main content -->
+    <div class="main">
+        <div class="chat-container" id="chat-container">
+            <!-- Messages will be dynamically added here -->
+        </div>
+        <div class="input-container">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
-</div>
-<script>
-    // Retrieve room ID from URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomID = urlParams.get('roomID');
-    const currentPlayerName = urlParams.get('username');
+    <script>
+        // Retrieve room ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomID = urlParams.get('roomID');
+        const currentPlayerName = urlParams.get('username');
 
-    // Display room ID for demonstration (You can remove this line)
-    document.getElementById('roomID').innerText = roomID;
-    document.getElementById('playerNameTop').textContent = currentPlayerName;
+        let uniquePlayers = new Set();
+
+        // Display room ID for demonstration (You can remove this line)
+        document.getElementById('roomID').innerText = roomID;
+        document.getElementById('playerNameTop').textContent = currentPlayerName;
 
 
-    // Connect to WebSocket server
-    const ws = new WebSocket('ws://localhost:3000');
+        // Connect to WebSocket server
+        const ws = new WebSocket('ws://localhost:3000');
 
-    // Store messages locally
-    let messages = [];
+        // Store messages locally
+        let messages = [];
 
-    ws.onopen = function() {
-        // Send a joinRoom message to the server
-        const joinRoomMessage = {
-            type: 'joinRoom',
-            roomName: roomID,
-            username: currentPlayerName // You can set the player's username here
+        ws.onopen = function () {
+            // Send a joinRoom message to the server
+            const joinRoomMessage = {
+                type: 'joinRoom',
+                roomName: roomID,
+                username: currentPlayerName // You can set the player's username here
+            };
+            ws.send(JSON.stringify(joinRoomMessage));
         };
-        ws.send(JSON.stringify(joinRoomMessage));
-    };
 
-    // Handle incoming messages from the server
-    ws.onmessage = function(event) {
+        ws.onmessage = function(event) {
         const message = JSON.parse(event.data);
         if (message.type === 'chatMessage') {
             // Handle chatMessage from the server
@@ -73,17 +76,21 @@
 
             // Store message locally
             messages.push(message);
-        } // Handle joinedRoom message from the server
-else if (message.type === 'joinedRoom') {
-    // Handle joinedRoom message from the server
-    const playerList = document.getElementById('playerList');
-    playerList.innerHTML = ''; // Clear existing player list
-    message.players.forEach(player => {
-        const playerName = document.createElement('li');
-        playerName.textContent = player;
-        playerList.appendChild(playerName);
-    });
-        } else if (message.type === 'message') {
+        }  else if (message.type === 'joinedRoom') {
+        // Handle joinedRoom message from the server
+        const playerList = document.getElementById('playerList');
+        playerList.innerHTML = ''; // Clear existing player list
+        uniquePlayers.clear(); // Clear unique players set
+        message.players.forEach(player => {
+            uniquePlayers.add(player); // Add players to the set
+        });
+        // Add unique players to the player list
+        uniquePlayers.forEach(player => {
+            const playerName = document.createElement('li');
+            playerName.textContent = player;
+            playerList.appendChild(playerName);
+        });
+        } else if (message.type === 'messages') {
             // Load stored messages
             messages = message.data;
             // Display stored messages
@@ -98,13 +105,15 @@ else if (message.type === 'joinedRoom') {
         }
     };
 
-    function sendMessage() {
-        const messageInput = document.getElementById('message-input');
-        const message = messageInput.value.trim();
-        ws.send(JSON.stringify({ type: 'message', roomName: roomID, message: message, username: currentPlayerName  }));
-        messageInput.value = ''; // Clear the input field after sending the message
-    }
-</script>
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            ws.send(JSON.stringify({ type: 'message', roomName: roomID, message: message, username: currentPlayerName }));
+            messageInput.value = ''; // Clear the input field after sending the message
+        }
+        
+    </script>
 
 </body>
+
 </html>

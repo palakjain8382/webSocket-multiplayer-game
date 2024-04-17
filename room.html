@@ -70,37 +70,46 @@
         }
 
 
-        ws.onmessage = function (event) {
-            const message = JSON.parse(event.data);
-            switch (message.type) {
-                case 'joinedRoom':
-                    // Handle joinedRoom message from the server
-                    const playerList = document.getElementById('playerList');
-                    playerList.innerHTML = ''; // Clear existing player list
-                    message.players.forEach(player => {
-                        const playerName = document.createElement('p');
-                        playerName.textContent = player;
-                        playerList.appendChild(playerName);
-                    });
-                    // Display the user's name (currentPlayerName)
-                    document.getElementById('userNameDisplay').textContent = message.currentPlayerName;
-                    document.getElementById('userNameDisplay').style.display = 'inline-block';
-                    break;
-                case 'gameStarted':
-                    console.log('Game started!');
-                    break;
-                case 'redirectToChat':
-                    window.location.href = `chat.html?roomID=${roomID}&username=${document.getElementById('userNameDisplay').textContent}`;
-                    break;
-                // Handle other message types as needed
-            }
-        };
+   // Define a Set to store unique player names
+const uniquePlayerNames = new Set();
+
+ws.onmessage = function (event) {
+    const message = JSON.parse(event.data);
+    switch (message.type) {
+        case 'joinedRoom':
+            // Handle joinedRoom message from the server
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = ''; // Clear existing player list
+            uniquePlayerNames.clear(); // Clear existing unique player names
+            message.players.forEach(player => {
+                // Add each player name to the Set
+                uniquePlayerNames.add(player);
+            });
+            // Iterate over unique player names and append them to the player list
+            uniquePlayerNames.forEach(playerName => {
+                const playerItem = document.createElement('p');
+                playerItem.textContent = playerName;
+                playerList.appendChild(playerItem);
+            });
+            // Display the user's name (currentPlayerName)
+            document.getElementById('userNameDisplay').textContent = message.currentPlayerName;
+            document.getElementById('userNameDisplay').style.display = 'inline-block';
+            break;
+        case 'gameStarted':
+            console.log('Game started!');
+            break;
+        case 'redirectToChat':
+            window.location.href = `chat.html?roomID=${roomID}&username=${document.getElementById('userNameDisplay').textContent}`;
+            break;
+        // Handle other message types as needed
+    }
+};
 
 
        // Event listener for the "Start Game" button
 document.getElementById('startGameBtn').addEventListener('click', function () {
     // Send a message to the server indicating that the game should start
-    const startGameMessage = {
+    const startGameMessage = {  
         type: 'startGame',
         roomName: roomID
     };

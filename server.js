@@ -1,3 +1,4 @@
+
 const http = require('http');
 const WebSocket = require('ws');
 const { MongoClient } = require('mongodb');
@@ -41,7 +42,7 @@ wss.on('connection', (ws) => {
 function handleMessage(data, ws) {
     switch (data.type) {
         case 'createRoom':
-            createRoom(data.roomName, ws);
+            createRoom(data.roomName, ws); 
             break;
         case 'joinRoom':
             joinRoom(data.roomName, ws);
@@ -50,12 +51,12 @@ function handleMessage(data, ws) {
             // Ensure that the message includes the roomName
             if (data.roomName && rooms[data.roomName]) {
                 broadcastToRoom(data.roomName, { type: 'chatMessage', username: data.username, text: data.message });
-                console.log('in cases: ',data.username);
+                console.log('in cases: ',data.message);
                 updateMongoDB(data.roomName, data.username, data.message); // Update MongoDB with the message
             } else {
                 console.log('Failed to send message. Room not found or unauthorized.');
             }
-            break;
+            break;  
         case 'setName':
             if (!ws.username) {
                 ws.username = data.username;
@@ -88,12 +89,12 @@ function createRoom(roomName, ws) {
 }
 
 // Modify joinRoom function to prevent auto-adding users and handle reconnections
-async  function joinRoom(roomName, ws) {
+  async function joinRoom(roomName, ws) {
     if (!rooms[roomName]) {
         createRoom(roomName, ws);
     }
     if (rooms[roomName]) {
-        if (!rooms[roomName].players.includes(currentPlayerName)) { // Check if player is already in the room
+        // if (!rooms[roomName].players.includes(currentPlayerName)) { // Check if player is already in the room
             rooms[roomName].clients.push(ws);
             clientRooms[ws] = roomName;
             rooms[roomName].players.push(currentPlayerName);
@@ -104,16 +105,17 @@ async  function joinRoom(roomName, ws) {
                 console.log('User ', currentPlayerName, ' joined room:', roomName);
                 broadcastPlayerList(roomName); // Broadcast the updated player list to all clients in the room
             }, 4000);
-        } else {
+        }
+        else {
             // Handle reconnection, send only room data without adding user again
             ws.send(JSON.stringify({ type: 'joinedRoom', roomName, players: rooms[roomName].players, currentPlayerName }));
             ws.send(JSON.stringify({ type: 'message', data: messages[roomName] }));
             console.log('User ', currentPlayerName, ' reconnected to room:', roomName);
-        }
-    } else {
-        console.log('Failed to join room. Room not found:', roomName);
-    }
-}
+        }}
+//     } else {
+//         console.log('Failed to join room. Room not found:', roomName);
+//     }
+// }
 
 function broadcastToRoom(roomName, message) {
     rooms[roomName].clients.forEach(client => {
