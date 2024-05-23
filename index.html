@@ -66,8 +66,19 @@
         <div class="popup-content">
             <span class="close" onclick="closeSettingsPopup()">&times;</span>
             <h2>Settings</h2>
-            <!-- Add settings content here -->
+            <button onclick="showAllRooms()">Show All Rooms</button>
+            <button onclick="deleteRooms()">Delete Rooms</button>
         </div>
+    </div>    
+
+    <div id="allRoomsPopup" class="popup" style="border: 2px solid black; display: none; position: absolute; top: 50%; left: 50%; width: 70%; height: 60%; z-index: 9999; background-color: white; padding: 20px; overflow-y: auto;">
+        <span class="close" onclick="closeAllRoomsPopup()" style="position: absolute; top: 10px; right: 10px; cursor: pointer;">&times;</span>
+        <span>
+            <h2>All Rooms
+            <button id="deleteButton" style="display: none;">Delete All</button>
+        </h2>
+        </span>
+        <div id="allRoomsTable"></div>
     </div>
     
     <div id="profilePopup" class="popup" style="display: none;">
@@ -194,6 +205,129 @@ function generateRoomID() {
         roomID += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return roomID;
+}
+
+// Function to show the settings popup
+function showSettingsPopup() {
+    closeAdminPopup(); // Close admin popup if open
+    closeProfilePopup(); // Close profile popup if open
+    const settingsPopup = document.getElementById('settingsPopup');
+    settingsPopup.style.display = 'block';
+}
+
+// Function to show the profile popup
+function showProfilePopup() {
+    closeAdminPopup(); // Close admin popup if open
+    closeSettingsPopup(); // Close settings popup if open
+    const profilePopup = document.getElementById('profilePopup');
+    profilePopup.style.display = 'block';
+}
+
+// Function to show the admin popup
+function showAdminPopup() {
+    closeSettingsPopup(); // Close settings popup if open
+    closeProfilePopup(); // Close profile popup if open
+    const adminPopup = document.getElementById('adminPopup');
+    adminPopup.style.display = 'block';
+}
+
+// Function to close the admin popup
+function closeAdminPopup() {
+    const adminPopup = document.getElementById('adminPopup');
+    adminPopup.style.display = 'none';
+}
+
+function closeSettingsPopup() {
+    const adminPopup = document.getElementById('settingsPopup');
+    adminPopup.style.display = 'none';
+}
+
+function closeProfilePopup() {
+    const adminPopup = document.getElementById('profilePopup');
+    adminPopup.style.display = 'none';
+}
+
+// Close popups when clicking outside
+window.addEventListener('click', function(event) {
+    const adminPopup = document.getElementById('adminPopup');
+    const settingsPopup = document.getElementById('settingsPopup');
+    const profilePopup = document.getElementById('profilePopup');
+    
+    if (event.target == adminPopup || event.target == settingsPopup || event.target == profilePopup) {
+        adminPopup.style.display = 'none';
+        settingsPopup.style.display = 'none';
+        profilePopup.style.display = 'none';
+    }
+});
+
+function showAllRooms() {
+    document.getElementById('deleteButton').style.display = 'none';
+    const rooms = [
+        { id: 1, roomId: 'ABC123', status: 'Active' },
+        { id: 2, roomId: 'DEF456', status: 'Inactive' },
+    ];
+
+    // Construct the table HTML
+    let tableHTML = '<table>';
+    tableHTML += '<tr><th>S. No.</th><th>Room ID</th><th>Status</th></tr>';
+    rooms.forEach((room, index) => {
+        tableHTML += `<tr><td>${index + 1}</td><td>${room.roomId}</td><td>${room.status}</td></tr>`;
+    });
+    tableHTML += '</table>';
+
+    // Display the popup with all rooms
+    const allRoomsPopup = document.getElementById('allRoomsPopup');
+    const allRoomsTable = document.getElementById('allRoomsTable');
+    allRoomsTable.innerHTML = tableHTML;
+    allRoomsPopup.style.display = 'block';
+}
+
+function showAllRooms(showDeleteIcon) {
+    if(showDeleteIcon)
+    document.getElementById('deleteButton').style.display = 'inline-block';
+    const rooms = [
+        { id: 1, roomId: 'ABC123', status: 'Active' },
+        { id: 2, roomId: 'DEF456', status: 'Inactive' },
+    ];
+
+    // Construct the table HTML
+    let tableHTML = '<table>';
+    tableHTML += '<tr><th>S. No.</th><th>Room ID</th><th>Status</th>';
+    
+    if (showDeleteIcon) {
+        tableHTML += '<th>Action</th>'; // Add a new column for delete action
+    }
+
+    tableHTML += '</tr>';
+    
+    rooms.forEach((room, index) => {
+        tableHTML += `<tr><td>${index + 1}</td><td>${room.roomId}</td><td>${room.status}</td>`;
+        
+        if (showDeleteIcon) {
+            tableHTML += `<td><img src="delete.png" alt="Delete" width="20px" onclick="deleteRoom(${room.id})"></td>`; // Add delete icon and onclick event
+        }
+        
+        tableHTML += '</tr>';
+    });
+    
+    tableHTML += '</table>';
+
+    // Display the popup with all rooms
+    const allRoomsPopup = document.getElementById('allRoomsPopup');
+    const allRoomsTable = document.getElementById('allRoomsTable');
+    allRoomsTable.innerHTML = tableHTML;
+    allRoomsPopup.style.display = 'block';
+}
+
+// Function to close the popup displaying all rooms
+function closeAllRoomsPopup() {
+    const allRoomsPopup = document.getElementById('allRoomsPopup');
+    allRoomsPopup.style.display = 'none';
+}
+
+function deleteRooms() {
+    // Display the popup with all rooms and delete option
+    showAllRooms(true);
 }
 
     </script>

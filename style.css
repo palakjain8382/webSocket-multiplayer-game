@@ -247,3 +247,35 @@ img{
     border-radius: 5px;
 }
 
+#allRoomsTable table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+#allRoomsTable th,
+#allRoomsTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    text-align: center;
+}
+
+#allRoomsTable th {
+    background-color: #f2f2f2;
+}
+
+#deleteButton{
+    float: right;
+    background-color: red !important;
+    border-color: red;
+    color: white;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+#deleteButton:hover{
+    background-color: rgb(190, 2, 2) !important;
+    border-color: rgb(190, 2, 2);
+    color: white;
+}

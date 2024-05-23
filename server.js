@@ -13,9 +13,9 @@ let currentPlayerName = '';
 
 // MongoDB connection URI
 const uri = 'mongodb://localhost:27017';
-const client = new MongoClient(uri);
+const client = new MongoClient(uri);  
 
-// Connect to MongoDB
+// Connect to MongoDB 
 client.connect()
     .then(() => {
         console.log('Connected to MongoDB');
